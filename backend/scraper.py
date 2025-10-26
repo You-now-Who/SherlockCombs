@@ -7,7 +7,7 @@ import json
 load_dotenv()
 
 SCRAPINGDOG_API_KEY = os.environ["SCRAPINGDOG_API"]
-SCRAPINDOG_ENDPOINT = os.environ["SCRAPINGDOG_ENDPOINT"]
+SCRAPING_ENDPOINT = os.environ["SCRAPING_ENDPOINT"]
 
 def make_shopping_request(query):
     params = {
@@ -23,11 +23,11 @@ def make_shopping_request(query):
         body = json.load(f)
         # print(body)
   
-    # response = requests.get(SCRAPINDOG_ENDPOINT, params=params)
+    response = requests.get(SCRAPING_ENDPOINT, params=params)
     
-    response = Response()
-    response._content = json.dumps(body).encode('utf-8')
-    response.status_code = 200
+    # response = Response()
+    # response._content = json.dumps(body).encode('utf-8')
+    # response.status_code = 200
     
     if response.status_code == 200:
         # data = response.json()
