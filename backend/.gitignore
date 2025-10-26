@@ -41,3 +41,5 @@ fashion_capture_*.png
 # OS
 .DS_Store
 Thumbs.db
+.env
+make_life_ez.json

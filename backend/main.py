@@ -12,8 +12,11 @@ import torch
 import numpy as np
 from PIL import Image
 from fashion_clip.fashion_clip import FashionCLIP
+from transformers import AutoProcessor, AutoModelForCausalLM
 import io
 import logging
+
+from scraper import make_shopping_request
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -37,6 +40,8 @@ app.add_middleware(
 
 # Global model variable
 fashion_model = None
+florence_model = None
+florence_processor = None
 
 # Fashion categories
 CATEGORIES = [
@@ -85,14 +90,35 @@ class AnalysisResponse(BaseModel):
     message: str = ""
 
 
+class CaptionResponse(BaseModel):
+    success: bool
+    caption: str
+    detailed_caption: str = ""
+    message: str = ""
+
+
 @app.on_event("startup")
 async def load_model():
     """Load the Fashion-CLIP model on startup"""
-    global fashion_model
+    global fashion_model, florence_model, florence_processor
     try:
         logger.info("Loading Fashion-CLIP model...")
         fashion_model = FashionCLIP('fashion-clip')
-        logger.info("Model loaded successfully!")
+        logger.info("Fashion-CLIP model loaded successfully!")
+        
+        logger.info("Loading Florence-2 model for image captioning...")
+        florence_processor = AutoProcessor.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
+        florence_model = AutoModelForCausalLM.from_pretrained(
+            "microsoft/Florence-2-base", 
+            trust_remote_code=True,
+            attn_implementation="eager"  # Use eager attention to avoid SDPA issues
+        )
+        
+        # Move to GPU if available
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        florence_model = florence_model.to(device)
+        logger.info(f"Florence-2 model loaded successfully on {device}!")
+        
     except Exception as e:
         logger.error(f"Failed to load model: {e}")
         raise
@@ -107,6 +133,7 @@ async def root():
         "status": "running",
         "endpoints": {
             "/analyze": "POST - Analyze fashion image",
+            "/analyseCaption": "POST - Generate image caption",
             "/health": "GET - Health check",
             "/docs": "GET - API documentation"
         }
@@ -117,9 +144,11 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     model_status = "loaded" if fashion_model is not None else "not loaded"
+    florence_status = "loaded" if florence_model is not None else "not loaded"
     return {
         "status": "healthy",
-        "model": model_status
+        "fashion_model": model_status,
+        "caption_model": florence_status
     }
 
 
@@ -295,6 +324,88 @@ async def analyze_batch(files: List[UploadFile] = File(...)):
     
     return {"results": results}
 
+
+@app.post("/analyseCaption", response_model=CaptionResponse)
+async def analyze_caption(file: UploadFile = File(...)):
+    """
+    Generate a caption for the image using Florence-2
+    
+    Args:
+        file: Image file (jpg, png, etc.)
+        
+    Returns:
+        JSON response with generated caption and detailed caption
+    """
+    if florence_model is None or florence_processor is None:
+        raise HTTPException(status_code=503, detail="Caption model not loaded")
+    
+    # Validate file type
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    try:
+        # Read image
+        contents = await file.read()
+        pil_image = Image.open(io.BytesIO(contents))
+        
+        # Ensure RGB mode
+        if pil_image.mode != 'RGB':
+            pil_image = pil_image.convert('RGB')
+        
+        logger.info(f"Generating caption for image: {file.filename}, size: {pil_image.size}")
+        
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        
+        # Generate simple caption
+        prompt = "<CAPTION>"
+        inputs = florence_processor(text=prompt, images=pil_image, return_tensors="pt")
+        
+        # Move all inputs to device
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        
+        logger.info(f"Generating caption...")
+        generated_ids = florence_model.generate(
+            **inputs,
+            max_new_tokens=1024,
+            num_beams=3
+        )
+        generated_text = florence_processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+        caption = florence_processor.post_process_generation(generated_text, task=prompt, image_size=(pil_image.width, pil_image.height))
+        
+        # Generate detailed caption
+        detailed_prompt = "<DETAILED_CAPTION>"
+        inputs_detailed = florence_processor(text=detailed_prompt, images=pil_image, return_tensors="pt")
+        inputs_detailed = {k: v.to(device) for k, v in inputs_detailed.items()}
+        
+        logger.info(f"Generating detailed caption...")
+        generated_ids_detailed = florence_model.generate(
+            **inputs_detailed,
+            max_new_tokens=1024,
+            num_beams=3
+        )
+        generated_text_detailed = florence_processor.batch_decode(generated_ids_detailed, skip_special_tokens=False)[0]
+        detailed_caption = florence_processor.post_process_generation(generated_text_detailed, task=detailed_prompt, image_size=(pil_image.width, pil_image.height))
+        
+        logger.info(f"Caption generation complete for {file.filename}")
+        
+        return CaptionResponse(
+            success=True,
+            caption=caption.get("<CAPTION>", ""),
+            detailed_caption=detailed_caption.get("<DETAILED_CAPTION>", ""),
+            message="Caption generated successfully"
+        )
+        
+    except Exception as e:
+        logger.error(f"Caption generation failed: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Caption generation failed: {str(e)}")
+
+@app.get("/get_shopping")
+async def get_shopping_request(query: str):
+    print(query)
+    res = make_shopping_request(query)
+    return (res.json())
 
 @app.get("/categories")
 async def get_categories():
