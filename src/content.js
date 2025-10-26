@@ -7,11 +7,18 @@
   
   // Cache for shopping results
   const resultsCache = new Map();
+  const styleCache = new Map();
 
   function cleanPrice(priceText) {
     if (!priceText) return priceText;
     // Remove the Â character and other encoding artifacts
     return priceText.replace(/Â/g, '').replace(/\u00A0/g, ' ').trim();
+  }
+
+  function createElementFromHTML(htmlString) {
+    const div = document.createElement('div');
+    div.innerHTML = htmlString.trim();
+    return div.firstChild;
   }
 
   function removeExisting() {
@@ -28,10 +35,17 @@
     
     const badge = document.createElement('button');
     badge.className = BADGE_CLASS;
-    badge.innerHTML = `
-      <span class="${BADGE_CLASS}__icon">${icons.tag}</span>
-      <span class="${BADGE_CLASS}__price">${lowestPrice}</span>
-    `;
+    
+    const iconSpan = document.createElement('span');
+    iconSpan.className = BADGE_CLASS + '__icon';
+    iconSpan.innerHTML = icons.tag;
+    
+    const priceSpan = document.createElement('span');
+    priceSpan.className = BADGE_CLASS + '__price';
+    priceSpan.textContent = lowestPrice;
+    
+    badge.appendChild(iconSpan);
+    badge.appendChild(priceSpan);
     badge.title = 'View shopping results';
     
     badge.addEventListener('click', (e) => {
@@ -50,7 +64,7 @@
     parent?.appendChild(badge);
   }
 
-  function createOverlay(url, match, shoppingResults = null, loadingStage = null) {
+  function createOverlay(url, match, shoppingResults = null, loadingStage = null, styleDescription = null) {
     removeExisting();
 
     const panel = document.createElement('div');
@@ -60,17 +74,47 @@
     // Create header
     const header = document.createElement('div');
     header.className = OVERLAY_CLASS + '__header';
-    header.innerHTML = `
-      <div class="${OVERLAY_CLASS}__title">
-        <span class="${OVERLAY_CLASS}__logo">${icons.search}</span>
-        <span>SherlockCombs</span>
-      </div>
-      <div class="${OVERLAY_CLASS}__actions">
-        <button class="${OVERLAY_CLASS}__pin-btn" title="Pin panel">${icons.pin}</button>
-        <button class="${OVERLAY_CLASS}__close-btn" title="Close">${icons.close}</button>
-      </div>
-    `;
+    
+    const titleDiv = document.createElement('div');
+    titleDiv.className = OVERLAY_CLASS + '__title';
+    
+    const logoSpan = document.createElement('span');
+    logoSpan.className = OVERLAY_CLASS + '__logo';
+    logoSpan.innerHTML = icons.search;
+    
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = 'SherlockCombs';
+    
+    titleDiv.appendChild(logoSpan);
+    titleDiv.appendChild(titleSpan);
+    
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = OVERLAY_CLASS + '__actions';
+    
+    const headerPinBtn = document.createElement('button');
+    headerPinBtn.className = OVERLAY_CLASS + '__pin-btn';
+    headerPinBtn.title = 'Pin panel';
+    headerPinBtn.innerHTML = icons.pin;
+    
+    const headerCloseBtn = document.createElement('button');
+    headerCloseBtn.className = OVERLAY_CLASS + '__close-btn';
+    headerCloseBtn.title = 'Close';
+    headerCloseBtn.innerHTML = icons.close;
+    
+    actionsDiv.appendChild(headerPinBtn);
+    actionsDiv.appendChild(headerCloseBtn);
+    
+    header.appendChild(titleDiv);
+    header.appendChild(actionsDiv);
     panel.appendChild(header);
+
+    // Style description banner
+    if (styleDescription) {
+      const styleBanner = document.createElement('div');
+      styleBanner.className = OVERLAY_CLASS + '__style-banner';
+      styleBanner.textContent = `This looks like a ${styleDescription} style`;
+      panel.appendChild(styleBanner);
+    }
 
     // If we have shopping results
     if (shoppingResults && shoppingResults.length > 0) {
@@ -97,8 +141,9 @@
         card.className = OVERLAY_CLASS + '__card';
         card.style.animationDelay = `${index * 0.04}s`;
         
-        // Decode thumbnail
-        let thumbnailHTML = `<div class="${OVERLAY_CLASS}__thumb-placeholder">${icons.shoppingBag}</div>`;
+        // Card thumbnail
+        const cardThumb = document.createElement('div');
+        cardThumb.className = OVERLAY_CLASS + '__card-thumb';
         
         if (result.thumbnail) {
           try {
@@ -107,33 +152,85 @@
             });
             
             if (thumbnailSrc.startsWith('data:image/')) {
-              thumbnailHTML = `
-                <img src="${thumbnailSrc}" class="${OVERLAY_CLASS}__thumb" alt="${result.title}" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="${OVERLAY_CLASS}__thumb-placeholder" style="display:none;">${icons.shoppingBag}</div>
-              `;
+              const img = document.createElement('img');
+              img.src = thumbnailSrc;
+              img.className = OVERLAY_CLASS + '__thumb';
+              img.alt = result.title;
+              
+              const placeholder = document.createElement('div');
+              placeholder.className = OVERLAY_CLASS + '__thumb-placeholder';
+              placeholder.innerHTML = icons.shoppingBag;
+              placeholder.style.display = 'none';
+              
+              img.onerror = function() {
+                this.style.display = 'none';
+                placeholder.style.display = 'flex';
+              };
+              
+              cardThumb.appendChild(img);
+              cardThumb.appendChild(placeholder);
+            } else {
+              const placeholder = document.createElement('div');
+              placeholder.className = OVERLAY_CLASS + '__thumb-placeholder';
+              placeholder.innerHTML = icons.shoppingBag;
+              cardThumb.appendChild(placeholder);
             }
           } catch (e) {
+            const placeholder = document.createElement('div');
+            placeholder.className = OVERLAY_CLASS + '__thumb-placeholder';
+            placeholder.innerHTML = icons.shoppingBag;
+            cardThumb.appendChild(placeholder);
             console.warn('Thumbnail decode failed:', e);
           }
+        } else {
+          const placeholder = document.createElement('div');
+          placeholder.className = OVERLAY_CLASS + '__thumb-placeholder';
+          placeholder.innerHTML = icons.shoppingBag;
+          cardThumb.appendChild(placeholder);
         }
         
         const isLowest = index === 0;
+        if (isLowest) {
+          const bestBadge = document.createElement('div');
+          bestBadge.className = OVERLAY_CLASS + '__best-badge';
+          bestBadge.textContent = 'Best';
+          cardThumb.appendChild(bestBadge);
+        }
         
-        card.innerHTML = `
-          <div class="${OVERLAY_CLASS}__card-thumb">
-            ${thumbnailHTML}
-            ${isLowest ? `<div class="${OVERLAY_CLASS}__best-badge">Best</div>` : ''}
-          </div>
-          <div class="${OVERLAY_CLASS}__card-info">
-            <div class="${OVERLAY_CLASS}__card-title">${result.title}</div>
-            <div class="${OVERLAY_CLASS}__card-meta">
-              <span class="${OVERLAY_CLASS}__card-price">${cleanPrice(result.price)}</span>
-              <span class="${OVERLAY_CLASS}__card-rating">${icons.star} ${result.rating}</span>
-            </div>
-            <div class="${OVERLAY_CLASS}__card-source">${result.source || 'Store'}</div>
-          </div>
-        `;
+        // Card info
+        const cardInfo = document.createElement('div');
+        cardInfo.className = OVERLAY_CLASS + '__card-info';
+        
+        const cardTitle = document.createElement('div');
+        cardTitle.className = OVERLAY_CLASS + '__card-title';
+        cardTitle.textContent = result.title;
+        
+        const cardMeta = document.createElement('div');
+        cardMeta.className = OVERLAY_CLASS + '__card-meta';
+        
+        const cardPrice = document.createElement('span');
+        cardPrice.className = OVERLAY_CLASS + '__card-price';
+        cardPrice.textContent = cleanPrice(result.price);
+        
+        const cardRating = document.createElement('span');
+        cardRating.className = OVERLAY_CLASS + '__card-rating';
+        cardRating.innerHTML = icons.star;
+        const ratingText = document.createTextNode(' ' + result.rating);
+        cardRating.appendChild(ratingText);
+        
+        cardMeta.appendChild(cardPrice);
+        cardMeta.appendChild(cardRating);
+        
+        const cardSource = document.createElement('div');
+        cardSource.className = OVERLAY_CLASS + '__card-source';
+        cardSource.textContent = result.source || 'Store';
+        
+        cardInfo.appendChild(cardTitle);
+        cardInfo.appendChild(cardMeta);
+        cardInfo.appendChild(cardSource);
+        
+        card.appendChild(cardThumb);
+        card.appendChild(cardInfo);
         
         card.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -148,36 +245,44 @@
       // Loading state with dynamic messages
       const loading = document.createElement('div');
       loading.className = OVERLAY_CLASS + '__loading';
-      loading.innerHTML = `
-        <div class="${OVERLAY_CLASS}__spinner">${icons.spinner}</div>
-        <div class="${OVERLAY_CLASS}__loading-text" id="loading-text"></div>
-      `;
+      
+      const spinner = document.createElement('div');
+      spinner.className = OVERLAY_CLASS + '__spinner';
+      spinner.innerHTML = icons.spinner;
+      
+      const loadingTextEl = document.createElement('div');
+      loadingTextEl.className = OVERLAY_CLASS + '__loading-text';
+      loadingTextEl.id = 'loading-text';
+      
+      loading.appendChild(spinner);
+      loading.appendChild(loadingTextEl);
       panel.appendChild(loading);
       
       // Set loading message based on stage
-      const loadingTextEl = loading.querySelector('#loading-text');
       if (loadingStage === 'analyzing') {
         const messages = [
-          `${icons.analyze} Analyzing fashion elements...`,
-          `${icons.shirt} Identifying clothing items...`,
-          `${icons.palette} Detecting colors and styles...`,
-          `${icons.sparkle} Understanding the look...`
+          { icon: icons.analyze, text: ' Analyzing fashion elements...' },
+          { icon: icons.shirt, text: ' Identifying clothing items...' },
+          { icon: icons.palette, text: ' Detecting colors and styles...' },
+          { icon: icons.sparkle, text: ' Understanding the look...' }
         ];
         let messageIndex = 0;
-        loadingTextEl.textContent = messages[0];
+        loadingTextEl.innerHTML = messages[0].icon;
+        loadingTextEl.appendChild(document.createTextNode(messages[0].text));
         
         // Cycle through messages
         const interval = setInterval(() => {
           messageIndex = (messageIndex + 1) % messages.length;
           if (loadingTextEl.isConnected) {
-            loadingTextEl.textContent = messages[messageIndex];
+            loadingTextEl.innerHTML = messages[messageIndex].icon;
+            loadingTextEl.appendChild(document.createTextNode(messages[messageIndex].text));
           } else {
             clearInterval(interval);
           }
         }, 5000);
       } else if (loadingStage === 'shopping') {
-        loadingTextEl.textContent = '';
-        loadingTextEl.innerHTML = `${icons.shoppingBag} Finding the best deals...`;
+        loadingTextEl.innerHTML = icons.shoppingBag;
+        loadingTextEl.appendChild(document.createTextNode(' Finding the best deals...'));
       } else {
         loadingTextEl.textContent = 'Loading...';
       }
@@ -239,7 +344,19 @@
 
   async function getShoppingResults(analysisData) {
     try {
-      let queryString = "Buy " + analysisData.colors[0].color + " " + analysisData.items[0].name;
+      // Filter out watches and ties, pick the next available item
+      const excludedItems = ['watch', 'tie'];
+      let selectedItem = analysisData.items[0];
+      
+      for (let item of analysisData.items) {
+        const itemName = item.name.toLowerCase();
+        if (!excludedItems.some(excluded => itemName.includes(excluded))) {
+          selectedItem = item;
+          break;
+        }
+      }
+      
+      let queryString = "Buy " + analysisData.colors[0].color + " " + selectedItem.name;
       const encodedQuery = encodeURIComponent(queryString);
       const response = await fetch(`http://localhost:8000/get_shopping?query=${encodedQuery}`);
 
@@ -297,7 +414,8 @@
         // Check cache first
         if (resultsCache.has(url)) {
           const cachedResults = resultsCache.get(url);
-          createOverlay(url, match, cachedResults);
+          const cachedStyle = styleCache.get(url);
+          createOverlay(url, match, cachedResults, null, cachedStyle);
           sendResponse({ ok: true, cached: true });
           return;
         }
@@ -319,6 +437,12 @@
           if (shoppingResults.length > 0) {
             resultsCache.set(url, shoppingResults);
             
+            // Get style description
+            const styleDescription = analysis.styles && analysis.styles.length > 0 
+              ? analysis.styles[0].style 
+              : null;
+            styleCache.set(url, styleDescription);
+            
             // Sort by price to get lowest
             const sortedResults = [...shoppingResults].sort((a, b) => {
               const priceA = parseFloat(a.extracted_price || a.price.replace(/[^0-9.]/g, '') || '999999');
@@ -332,7 +456,7 @@
               createPriceBadge(match, lowestPrice, url, shoppingResults);
             }
             
-            createOverlay(url, match, shoppingResults);
+            createOverlay(url, match, shoppingResults, null, styleDescription);
           }
         }
         

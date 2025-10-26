@@ -155,6 +155,18 @@ svg {
   background-color: #fee2e2;
 }
 
+/* Style Banner */
+.sherlockcombs-panel__style-banner {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
 /* Price Badge */
 .sherlockcombs-panel__price-badge {
   padding: 12px 20px;
