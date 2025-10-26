@@ -1,132 +1,390 @@
-.sherlockcombs-superscript {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  transition: opacity .18s ease, transform .18s ease;
-  opacity: 1;
+/* SherlockCombs - Clean sidebar panel */
+
+/* SVG Icon Styling */
+svg {
+  display: inline-block;
+  vertical-align: middle;
 }
 
-.sherlockcombs-superscript__img {
-  width: 48px;
-  height: 48px;
-  object-fit: cover;
-  border: 2px solid white;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+/* Price Badge on Image */
+.sherlockcombs-img-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  flex-shrink: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  animation: badgePulse 2s ease-in-out infinite;
 }
 
-.sherlockcombs-superscript__shopping {
+@keyframes badgePulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 2px 16px rgba(16, 185, 129, 0.6);
+  }
+}
+
+.sherlockcombs-img-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.sherlockcombs-img-badge:active {
+  transform: scale(0.98);
+}
+
+.sherlockcombs-img-badge__icon {
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.sherlockcombs-img-badge__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sherlockcombs-img-badge__price {
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Panel Styles */
+.sherlockcombs-panel {
+  position: fixed;
+  top: 0;
+  right: -380px;
+  width: 380px;
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: -2px 0 16px rgba(0, 0, 0, 0.1);
+  z-index: 2147483647;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sherlockcombs-superscript__card {
-  background: white;
-  border-radius: 8px;
-  padding: 10px;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.25);
-  min-width: 240px;
-  max-width: 320px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  cursor: default;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+.sherlockcombs-panel--visible {
+  transform: translateX(-380px);
+}
+
+.sherlockcombs-panel--pinned {
+  box-shadow: -2px 0 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Header */
+.sherlockcombs-panel__header {
   display: flex;
-  gap: 10px;
-}
-
-.sherlockcombs-superscript__card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-}
-
-.sherlockcombs-superscript__card-thumb {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 6px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
   flex-shrink: 0;
 }
 
-.sherlockcombs-superscript__card-placeholder {
-  width: 60px;
-  height: 60px;
+.sherlockcombs-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.sherlockcombs-panel__logo {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  color: #3b82f6;
+}
+
+.sherlockcombs-panel__logo svg {
+  width: 22px;
+  height: 22px;
+}
+
+.sherlockcombs-panel__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sherlockcombs-panel__pin-btn,
+.sherlockcombs-panel__close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px 8px;
   border-radius: 6px;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: background-color 0.15s ease;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
 }
 
-.sherlockcombs-superscript__card-content {
+.sherlockcombs-panel__pin-btn svg,
+.sherlockcombs-panel__close-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sherlockcombs-panel__pin-btn:hover,
+.sherlockcombs-panel__close-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.sherlockcombs-panel__close-btn:hover {
+  background-color: #fee2e2;
+}
+
+/* Price Badge */
+.sherlockcombs-panel__price-badge {
+  padding: 12px 20px;
+  background: #ecfdf5;
+  border-bottom: 1px solid #d1fae5;
+  color: #065f46;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Results Container */
+.sherlockcombs-panel__results {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+
+.sherlockcombs-panel__results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sherlockcombs-panel__results::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+.sherlockcombs-panel__results::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.sherlockcombs-panel__results::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Card */
+.sherlockcombs-panel__card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: slideIn 0.3s ease forwards;
+  opacity: 0;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sherlockcombs-panel__card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  transform: translateX(-2px);
+}
+
+.sherlockcombs-panel__card:active {
+  transform: scale(0.98);
+}
+
+/* Card Thumbnail */
+.sherlockcombs-panel__card-thumb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.sherlockcombs-panel__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sherlockcombs-panel__thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  background: #f9fafb;
+  color: #9ca3af;
+}
+
+.sherlockcombs-panel__thumb-placeholder svg {
+  width: 32px;
+  height: 32px;
+}
+
+.sherlockcombs-panel__best-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: #10b981;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Card Info */
+.sherlockcombs-panel__card-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
 }
 
-.sherlockcombs-superscript__card-header strong {
+.sherlockcombs-panel__card-title {
   font-size: 13px;
-  color: #222;
-  font-weight: 600;
-  display: block;
-  line-height: 1.3;
-  max-height: 2.6em;
+  font-weight: 500;
+  color: #111827;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.sherlockcombs-superscript__card-body {
+.sherlockcombs-panel__card-meta {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.sherlockcombs-panel__card-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.sherlockcombs-panel__card-rating {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
   gap: 4px;
 }
 
-.sherlockcombs-superscript__price {
-  font-size: 16px;
-  font-weight: 700;
-  color: #2a7c2e;
+.sherlockcombs-panel__card-rating svg {
+  width: 14px;
+  height: 14px;
+  color: #fbbf24;
 }
 
-.sherlockcombs-superscript__rating {
-  font-size: 12px;
-  color: #666;
-}
-
-.sherlockcombs-superscript__shop-link {
-  color: #1a73e8;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background-color 0.15s ease;
-  display: inline-block;
-  text-align: center;
+.sherlockcombs-panel__card-source {
+  font-size: 11px;
+  color: #9ca3af;
   margin-top: auto;
 }
 
-.sherlockcombs-superscript__shop-link:hover {
-  background-color: #e8f0fe;
-  text-decoration: none;
+/* Loading State */
+.sherlockcombs-panel__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+  color: #6b7280;
 }
 
-/* small responsive tweak for very small viewports */
-@media (max-width:420px) {
-  .sherlockcombs-superscript__img {
-    width: 40px;
-    height: 40px;
+.sherlockcombs-panel__spinner {
+  width: 40px;
+  height: 40px;
+  color: #3b82f6;
+  animation: spin 0.8s linear infinite;
+}
+
+.sherlockcombs-panel__spinner svg {
+  width: 40px;
+  height: 40px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
-  .sherlockcombs-superscript__card {
-    min-width: 180px;
-    max-width: 240px;
+}
+
+.sherlockcombs-panel__loading-text {
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sherlockcombs-panel__loading-text svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .sherlockcombs-panel {
+    width: 100vw;
+    right: -100vw;
   }
-  .sherlockcombs-superscript__card-thumb {
-    width: 50px;
-    height: 50px;
+  
+  .sherlockcombs-panel--visible {
+    transform: translateX(-100vw);
+  }
+  
+  .sherlockcombs-panel__card-thumb {
+    width: 60px;
+    height: 60px;
   }
 }
